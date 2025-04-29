@@ -1,0 +1,27 @@
+- name: Allow openvpn traffic on port 1194
+  ufw:
+    rule: allow
+    port: 1194
+    proto: udp
+
+- name: Get dictionary of interfaces and their facts
+  set_fact:
+    interfaces_facts: "{{ dict(ansible_facts.interfaces | zip(ansible_facts.interfaces | map('extract', ansible_facts) | list)) }}"
+
+- name: Get interface matching ansible_host
+  set_fact:
+    vpn_interface: "{{ item.key }}"
+  with_dict: "{{ interfaces_facts }}"
+  when: item.value.ipv4 is defined and item.value.ipv4.address == ansible_default_ipv4.address
+
+- name: Enable nat for vpn traffic
+  command:
+    cmd: iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o {{ vpn_interface }} -j MASQUERADE
+
+- name: Ensure ip_forward is enabled
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    state: present
+    reload: yes
+

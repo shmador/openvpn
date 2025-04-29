@@ -1,0 +1,60 @@
+- name: Setup easy-rsa directory
+  copy: 
+    src: /usr/share/easy-rsa
+    dest: /etc/openvpn
+    remote_src: yes
+
+- name: Initialize the pki
+  command: ./easyrsa init-pki
+  args:
+    chdir: /etc/openvpn/easy-rsa
+  environment:
+    EASYRSA_BATCH: "1"
+
+- name: Build the ca
+  command: ./easyrsa build-ca nopass
+  args:
+    chdir: /etc/openvpn/easy-rsa
+  environment:
+    EASYRSA_BATCH: "1"
+
+- name: Generate server certificate and key
+  command: ./easyrsa build-server-full server nopass
+  args:
+    chdir: /etc/openvpn/easy-rsa
+  environment:
+    EASYRSA_BATCH: "1"
+
+- name: Generate dh.pem
+  command: ./easyrsa gen-dh
+  args:
+    chdir: /etc/openvpn/easy-rsa
+  environment:
+    EASYRSA_BATCH: "1"
+
+- name: Generate ta.key
+  command: openvpn --genkey --secret /etc/openvpn/easy-rsa/pki/ta.key
+
+- name: Generate client certificate and key
+  command: ./easyrsa build-client-full client1 nopass
+  args:
+    chdir: /etc/openvpn/easy-rsa
+  environment:
+    EASYRSA_BATCH: "1"
+
+- name: Copy certs and keys
+  copy:
+    src: "{{ item }}"
+    dest: /etc/openvpn/
+    owner: root
+    group: root
+    remote_src: yes
+  loop:
+    - /etc/openvpn/easy-rsa/pki/ca.crt
+    - /etc/openvpn/easy-rsa/pki/ta.key
+    - /etc/openvpn/easy-rsa/pki/dh.pem
+    - /etc/openvpn/easy-rsa/pki/issued/server.crt
+    - /etc/openvpn/easy-rsa/pki/private/server.key
+    - /etc/openvpn/easy-rsa/pki/issued/client1.crt
+    - /etc/openvpn/easy-rsa/pki/private/client1.key
+

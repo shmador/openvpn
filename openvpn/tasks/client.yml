@@ -1,0 +1,40 @@
+- name: Set ip address
+  set_fact:
+    server_ip: "{{ ansible_host }}"
+
+- name: Read ca certificate content
+  shell: cat /etc/openvpn/ca.crt
+  register: ca_cert
+
+- name: Read client certificate content
+  shell: cat /etc/openvpn/client1.crt
+  register: client_cert
+
+- name: Read client key content
+  shell: cat /etc/openvpn/client1.key
+  register: client_key
+
+- name: Read TLS Auth key content
+  shell: cat /etc/openvpn/ta.key
+  register: ta_key
+
+- name: Create .ovpn file
+  template:
+    src: client.ovpn.j2
+    dest: /etc/openvpn/client.ovpn
+  vars:
+    ca_cert_content: "{{ ca_cert.stdout }}"
+    client_cert_content: "{{ client_cert.stdout }}"
+    client_key_content: "{{ client_key.stdout }}"
+    ta_key_content: "{{ ta_key.stdout }}"
+
+- name: Set the correct file permissions on .ovpn file
+  file:
+    path: /etc/openvpn/client.ovpn
+    mode: u=rw,g=r,o=r
+
+- name: Fetch .ovpn file to localhost
+  fetch:
+    src: /etc/openvpn/client.ovpn
+    dest: "{{ playbook_dir}}/client.ovpn"
+    flat: yes

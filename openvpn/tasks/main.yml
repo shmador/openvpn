@@ -1,0 +1,20 @@
+---
+# tasks file for openvpn
+- name: Install dependencies
+  import_tasks:
+    file: install.yml
+- name: Setup server keys
+  import_tasks:
+    file: keys.yml
+- name: Setup server config file
+  import_tasks:
+    file: config.yml
+- name: Setup client .ovpn file and fetch it
+  import_tasks:
+    file: client.yml
+- name: Configure iptables on server
+  import_tasks:
+    file: iptables.yml
+  notify:
+    - Restart openvpn
+

@@ -1,0 +1,3 @@
+---
+# defaults file for openvpn
+server_ip: dor.aws.cts.care
